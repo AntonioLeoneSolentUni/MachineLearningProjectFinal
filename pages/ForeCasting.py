@@ -77,7 +77,7 @@ def LSTMRun():
         figLSTM.update_layout(title="LSTM Predictions vs Actual", xaxis_title="Index", yaxis_title=target_col)
 
         #ARIMA model
-        ArimaModel = ARIMA(data_cleaned[target_col],order=(1,2,2))
+        ArimaModel = ARIMA(data_cleaned[target_col],order=(2,2,3))
         modelFit = ArimaModel.fit()
         st.write(modelFit.summary())
 
@@ -92,6 +92,7 @@ def LSTMRun():
         figARIMA.add_trace(go.Scatter(y=data_cleaned[target_col], mode='lines', name='Actual'))
         figARIMA.add_trace(go.Scatter(y=test, mode='lines', name='Predicted'))
         figARIMA.update_layout(title="ARIMA Predictions vs Actual", xaxis_title="Index", yaxis_title=target_col)
+
         with tab1:
             st.plotly_chart(figLSTM)
             st.write("Loss LSTM: ", test_loss)
@@ -112,10 +113,10 @@ def LSTMRun():
             # Iterate over the DataFrame rows
             for index in range(len(prophetDataframe)):
                 # Subtract the number of months from the current date
-                new_date = currentDate - relativedelta(months=allMonthsValue[index])
+                newDate = currentDate - relativedelta(months=allMonthsValue[index])
 
                 # Update the 'Month' column with the new date formatted as 'YYYY-MM-DD'
-                prophetDataframe.at[index, 'Month'] = new_date
+                prophetDataframe.at[index, 'Month'] = newDate
 
             prophetDataframe.rename(columns={'Month': 'ds', target_col: 'y'}, inplace=True)
             st.write(prophetDataframe)

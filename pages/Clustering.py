@@ -1,6 +1,3 @@
-from email.policy import default
-from unittest.mock import inplace
-
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import numpy as np
 import pandas as pd
@@ -13,7 +10,9 @@ from sklearn.cluster import KMeans
 st.header("Clustering:")
 
 st.write("Clustering is a technic to define groups which will be defined by the value 'k'. You can adjust this value"
-         "and experiment with. The outcome how many groups are in relation to your data and Monthly Outing")
+         "by your liking, or generating a 'K Elbow' graph which show you the best K value to insert."
+         "By selecting the column and providing a K value the system  generate a K cluster graph by pressing 'Generate K Cluster'"
+         "By pressing 'Generate K elbow' the system shows a graph for the best K value.")
 
 try:
     data_cleaned = st.session_state.DataCleaned
@@ -29,58 +28,64 @@ if st.session_state.mode != "Monthly Income":
 
 
 all_columns = data_cleaned.columns.tolist()
-exclude_column = 'Monthly Outing (£)'
-selected_columns = [col for col in all_columns if col != exclude_column]
+
+selectedColumn1 = st.selectbox("Select first column to compare with", options= data_cleaned.columns)
+selectedColumn2 = st.selectbox("Select second column to compare with", options = data_cleaned.columns)
+X = data_cleaned[[selectedColumn1, selectedColumn2]]
+
+def GenerateKCluster():
+    try:
+        kmeans = KMeans(n_clusters=kInput)
+        kmeans.fit(X)
+        labels = kmeans.predict(X)
+        X['Cluster'] = labels
+
+        plt.scatter(X[selectedColumn1], X[selectedColumn2], c=X['Cluster'], cmap='rainbow')
+        plt.title('Clusters Visualization')
+        plt.xlabel(selectedColumn1)
+        plt.ylabel(selectedColumn2)
+        st.pyplot(plt)
+    except Exception as e:
+        st.error("K cluster generating error: ",e)
 
 
 
-X = data_cleaned[selected_columns]
-y = data_cleaned['Monthly Outing (£)']
 
-scaler_x = MinMaxScaler()
-scaler_y = MinMaxScaler()
-X_scaled = scaler_x.fit_transform(X)
-y_scaled = scaler_y.fit_transform(y.values.reshape(-1, 1))
+def GenerateKElbow():
+    try:
+        if selectedColumn1 == selectedColumn2 or selectedColumn1 == "" or selectedColumn2 == "":
+            st.warning("Please provide two columns to compare with")
+        else:
+
+
+            inertias = []
+
+            for i in range(1, 11):
+                kmeans = KMeans(n_clusters=i)
+                kmeans.fit(X)
+                inertias.append(kmeans.inertia_)
+
+            plt.plot(range(1, 11), inertias, marker='o')
+            plt.title('Elbow method')
+            plt.xlabel('Number of clusters')
+            plt.ylabel('Inertia')
+            st.pyplot(plt)
+
+
+
+    except Exception as e:
+        st.write("Error Elbow method: ", e)
+kInput = int(st.number_input("K input"))
+
+st.button("Generate K cluster", on_click=GenerateKCluster)
+
 
 # Specify the number of clusters
 
-def KClustering():
-    # Create a KMeans instance
-    kmeans = KMeans(n_clusters=kVal, random_state=42)
+#def KClustering():
 
-    # Fit the model to the data
-    kmeans.fit(X_scaled)
+st.button("Generate K elbow", on_click=GenerateKElbow)
 
-    # Get the cluster labels
-    labels = kmeans.labels_
-
-    # Get the coordinates of the cluster centers
-    centers = kmeans.cluster_centers_
-
-    from sklearn.decomposition import PCA
-
-    # Reduce dimensions for visualization
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X_scaled)
-
-    # Plotting the clusters
-    plt.figure(figsize=(10, 6))
-    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, s=30, cmap='viridis', label='Data points')
-    centers_pca = pca.transform(centers)  # Transform the centers to PCA space
-    plt.scatter(centers_pca[:, 0], centers_pca[:, 1], c='red', s=200, alpha=0.75, marker='X',
-                label='Centroids')  # Cluster centers
-    plt.title('K-means Clustering with Multiple Features')
-    plt.xlabel('PCA Component 1')
-    plt.ylabel('PCA Component 2')
-    plt.legend()
-    plt.show()
-    st.pyplot(plt)
-    st.write(kVal)
-
-kVal = st.number_input(label="Grouping Input", placeholder = 1) # You can adjust this based on your analysis
-kVal = int(kVal)
-st.write(kVal)
-st.button("Generate KClustering.", on_click=KClustering)
 
 
 
